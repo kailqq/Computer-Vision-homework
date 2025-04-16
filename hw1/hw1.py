@@ -7,7 +7,16 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import logging
 def cv2_add_chinese_text(img, text, position, font_path, font_size, color):
-    """使用PIL绘制中文字符"""
+    """使用PIL绘制中文字符
+       img: 输入图像
+       text: 要绘制的文本
+       position: 文本位置(x, y)
+       font_path: 字体路径
+       font_size: 字体大小
+       color: 文本颜色(BGR格式)
+
+       因为OpenCV对中文的支持并不友好
+    """
     # 确保图像是uint8类型
     if img.dtype != np.uint8:
         img = img.astype(np.uint8)
@@ -28,7 +37,13 @@ def cv2_add_chinese_text(img, text, position, font_path, font_size, color):
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
 def create_intro(width, height, duration_sec=3, fps=30, font_path="simhei.ttf"):
-    """创建片头"""
+    """创建片头
+    width: 视频宽度
+    height: 视频高度
+    duration_sec: 片头持续时间
+    fps: 视频帧率
+    font_path: 字体路径
+    """
     frames = []
     total_frames = duration_sec * fps
 
@@ -62,7 +77,13 @@ def create_intro(width, height, duration_sec=3, fps=30, font_path="simhei.ttf"):
     return frames
 
 def resize_image(image, target_width, target_height):
-    """调整图像大小保持宽高比"""
+    """调整图像大小保持宽高比
+    image: 输入图像
+    target_width: 目标宽度
+    target_height: 目标高度
+
+    与resize不同，这里会保持宽高比，通过选择较小的比例来实现
+    """
 
     h, w = image.shape[:2]
     ratio = min(target_width/w, target_height/h)
@@ -77,7 +98,11 @@ def resize_image(image, target_width, target_height):
     return canvas
 
 def add_subtitle(frame, text, font_path="simhei.ttf"):
-    """添加字幕到视频帧底部"""
+    """添加字幕到视频帧底部
+    frame: 输入视频帧
+    text: 要绘制的文本
+    font_path: 字体路径
+    """
     h, w = frame.shape[:2]
     
     # 添加半透明背景条
@@ -93,7 +118,13 @@ def add_subtitle(frame, text, font_path="simhei.ttf"):
     return cv2_add_chinese_text(frame, text, (text_x, text_y), font_path, font_size, (255, 255, 255))
 
 def create_transition(frame1, frame2, num_frames=15):
-    """创建两帧之间的过渡效果"""
+    """创建两帧之间的过渡效果
+    frame1: 输入视频帧1
+    frame2: 输入视频帧2
+    num_frames: 过渡帧数
+
+    过渡效果所用函数可见https://docs.opencv.org/3.4/d5/dc4/tutorial_adding_images.html
+    """
     transitions = []
     for i in range(num_frames):
         alpha = i / num_frames
@@ -102,19 +133,21 @@ def create_transition(frame1, frame2, num_frames=15):
     return transitions
 
 def main():
-    info ={"name":"张晋恺","id":"3230102400"}
+
+    info ={"name":"your name","id":"your id"}
     if len(sys.argv) != 2:
         print("用法: python script.py <输入文件夹路径>")
         print("例如: python script.py C:\\input")
         sys.exit(1)
     
     input_dir = sys.argv[1]
-    
-    # 检查字体文件是否存在，尝试不同位置
+
+
     font_paths = [
         "simhei.ttf",  # 当前目录
         "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",  # Linux常见位置
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"  # 备选字体
+        # 如果需要，可以添加更多字体路径
     ]
     
     font_path = None
@@ -126,7 +159,6 @@ def main():
     
     if font_path is None:
         print("警告: 找不到可用的字体文件")
-        print("请下载中文字体文件并放在当前目录")
         sys.exit(1)
     
     # 查找视频和图像文件
@@ -154,8 +186,6 @@ def main():
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-    print(f"视频宽度: {width}, 高度: {height}, 帧率: {fps}")
-    
     # 创建输出视频
     output_path = os.path.join(os.path.dirname(input_dir), "MyVideo_Output.avi")
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -179,16 +209,8 @@ def main():
         if img is None:
             print(f"警告: 无法读取图像 {img_path}")
             continue
-        print(f"图像原始大小,高度: {img.shape[0]},宽度: {img.shape[1]}")
+       
         resized_img = resize_image(img, width, height)
-         # 保存调整大小后的图像
-        base_name = os.path.basename(img_path)
-        file_name, file_ext = os.path.splitext(base_name)
-        resized_path = os.path.join(os.path.dirname(input_dir), f"resized_{file_name}{file_ext}")
-        cv2.imwrite(resized_path, resized_img)
-        print(f"已保存调整大小后的图像: {resized_path}")
-
-        print(f"调整图像大小后,高度: {resized_img.shape[0]},宽度: {resized_img.shape[1]}")
         frame_with_subtitle = add_subtitle(resized_img.copy(), f"学号: {info['id']} 姓名: {info['name']}", font_path)
         
         # 添加过渡效果

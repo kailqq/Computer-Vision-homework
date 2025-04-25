@@ -20,20 +20,10 @@ def cv2_add_chinese_text(img, text, position, font_path, font_size, color):
     # 确保图像是uint8类型
     if img.dtype != np.uint8:
         img = img.astype(np.uint8)
-        
-    # 将OpenCV图像转换为PIL图像
     pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    
-    # 创建一个可以在给定图像上绘图的对象
     draw = ImageDraw.Draw(pil_img)
-    
-    # 加载中文字体
     font = ImageFont.truetype(font_path, font_size)
-    
-    # 在图像上绘制文本
     draw.text(position, text, font=font, fill=color)
-    
-    # 将PIL图像转换回OpenCV格式
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
 def create_intro(width, height, duration_sec=3, fps=30, font_path="simhei.ttf"):
@@ -46,32 +36,21 @@ def create_intro(width, height, duration_sec=3, fps=30, font_path="simhei.ttf"):
     """
     frames = []
     total_frames = duration_sec * fps
-
-    # 简单的渐变片头
     for i in range(total_frames):
-        # 创建渐变背景 - 确保是uint8类型
+        # 创建渐变背景
         progress = i / total_frames
         frame = np.ones((height, width, 3), dtype=np.uint8) * 255
         frame = (frame * progress).astype(np.uint8)
-        
         # 添加文本
         text = ["个人视频作品","素材来源于网络"]
         font_size = 72
-        
-        # 估算文本大小和位置
         text_x = width // 2 - len(text) * font_size // 3
         text_y = height // 2 - font_size // 2
-        
-        # 文字颜色从蓝到黑的渐变 (RGB格式用于PIL)
         color = (0, 0, int(255 * (1-progress)))
-        
-        # 使用PIL添加中文文本
-
         if progress < 0.3:
             frame = cv2_add_chinese_text(frame, text[0], (text_x, text_y), font_path, font_size, color)
         else:
             frame = cv2_add_chinese_text(frame, text[1], (text_x, text_y), font_path, font_size, color)
-        
         frames.append(frame)
     
     return frames
@@ -84,7 +63,6 @@ def resize_image(image, target_width, target_height):
 
     与resize不同，这里会保持宽高比，通过选择较小的比例来实现
     """
-
     h, w = image.shape[:2]
     ratio = min(target_width/w, target_height/h)
     new_w, new_h = int(w * ratio), int(h * ratio)
@@ -94,7 +72,6 @@ def resize_image(image, target_width, target_height):
     y_offset = (target_height - new_h) // 2
     x_offset = (target_width - new_w) // 2
     canvas[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized
-    
     return canvas
 
 def add_subtitle(frame, text, font_path="simhei.ttf"):
@@ -103,13 +80,11 @@ def add_subtitle(frame, text, font_path="simhei.ttf"):
     text: 要绘制的文本
     font_path: 字体路径
     """
-    h, w = frame.shape[:2]
-    
+    h, w = frame.shape[:2]  
     # 添加半透明背景条
     overlay = frame.copy()
     cv2.rectangle(overlay, (0, h-60), (w, h), (0, 0, 0), -1)
     cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
-    
     # 添加中文文字
     font_size = 28
     text_x = w // 2 - len(text) * font_size // 4
@@ -134,7 +109,7 @@ def create_transition(frame1, frame2, num_frames=15):
 
 def main():
 
-    info ={"name":"your name","id":"your id"}
+    info ={"name":"张晋恺","id":"3230102400"}
     if len(sys.argv) != 2:
         print("用法: python script.py <输入文件夹路径>")
         print("例如: python script.py C:\\input")
@@ -147,7 +122,6 @@ def main():
         "simhei.ttf",  # 当前目录
         "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",  # Linux常见位置
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"  # 备选字体
-        # 如果需要，可以添加更多字体路径
     ]
     
     font_path = None
@@ -160,8 +134,6 @@ def main():
     if font_path is None:
         print("警告: 找不到可用的字体文件")
         sys.exit(1)
-    
-    # 查找视频和图像文件
     video_files = glob.glob(os.path.join(input_dir, "*.avi")) + glob.glob(os.path.join(input_dir, "*.webm")) + glob.glob(os.path.join(input_dir, "*.mp4"))
     image_files = glob.glob(os.path.join(input_dir, "*.jpg")) + glob.glob(os.path.join(input_dir, "*.jpeg")) + glob.glob(os.path.join(input_dir, "*.png"))
     
@@ -212,14 +184,10 @@ def main():
        
         resized_img = resize_image(img, width, height)
         frame_with_subtitle = add_subtitle(resized_img.copy(), f"学号: {info['id']} 姓名: {info['name']}", font_path)
-        
-        # 添加过渡效果
         if prev_frame is not None:
             transitions = create_transition(prev_frame, frame_with_subtitle, transition_frames)
             for frame in transitions:
                 out.write(frame)
-        
-        # 写入持续显示的帧
         for _ in range(int(frames_per_photo - transition_frames)):
             out.write(frame_with_subtitle)
         
@@ -246,12 +214,9 @@ def main():
         
         frame_with_subtitle = add_subtitle(frame.copy(), f"学号: {info['id']} 姓名: {info['name']}", font_path)
         out.write(frame_with_subtitle)
-    
-    # 释放资源
     cap.release()
     out.release()
     
     print(f"视频已成功创建: {output_path}")
-
 if __name__ == "__main__":
     main()

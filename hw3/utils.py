@@ -5,6 +5,8 @@ import os
 def load_eye_positions(image_path):
     """加载眼睛位置信息"""
     txt_path = os.path.splitext(image_path)[0] + '.eye'
+    if not os.path.exists(txt_path):
+        return None
     with open(txt_path, 'r') as f:
         # 跳过第一行（标题行）
         f.readline()
@@ -31,9 +33,14 @@ def preprocess_image(image_path, target_size=(100, 100)):
     
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     eye_positions = load_eye_positions(image_path)
-    aligned = align_face(gray, eye_positions)
-    resized = cv2.resize(aligned, target_size)
-    normalized = resized.astype(np.float32) / 255.0
+    if eye_positions is None:
+        print(f"未找到眼睛位置信息: {image_path},不进行对齐")
+        resized = cv2.resize(gray, target_size)
+        normalized = resized.astype(np.float32) / 255.0
+    else:
+        aligned = align_face(gray, eye_positions)
+        resized = cv2.resize(aligned, target_size)
+        normalized = resized.astype(np.float32) / 255.0
     return normalized
 
 def create_feature_faces_image(eigenfaces, image_size=(100, 100)):

@@ -1,0 +1,11 @@
+# 训练配置
+train:
+  data_dir: "data/train"  # 训练数据目录
+  energy_percentage: 0.95  # 能量百分比
+  model_dir: "models/model.pkl"  # 模型保存路径
+
+# 测试配置
+test:
+  test_image: "data/test/test2.pgm"  # 测试图像路径
+  model_path: "models/model.pkl"  # 模型文件路径
+  data_dir: "data/train"  # 训练数据目录

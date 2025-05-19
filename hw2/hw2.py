@@ -31,15 +31,11 @@ def read_image_and_fit_ellipse(image_path):
     count_fitted = 0
     for contour in contours:
         # Only process large enough contours (filter noise)
-        if len(contour) >= 5 and cv2.contourArea(contour) > 100:
+        if len(contour) >= 5 and cv2.contourArea(contour) > 50:
             # Fit ellipse
             try:
                 ellipse = cv2.fitEllipse(contour)
                 cv2.ellipse(result_img, ellipse, (0, 0, 255), 2)
-                # Get the rotated rectangle (bounding box) of the ellipse
-                box = cv2.boxPoints(ellipse)
-                box = np.intp(box)
-                cv2.drawContours(result_img, [box], 0, (255, 0, 0), 2)
                 count_fitted += 1
             except:
                 print(f"Error fitting ellipse to contour with {len(contour)} points")

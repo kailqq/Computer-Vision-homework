@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import cv2
 import pickle
+import yaml
 from utils import preprocess_image
 
 def load_model(model_path):
@@ -31,12 +32,20 @@ def recognize_face(test_image_path, model_path):
     return most_similar_image, min_distance
 
 def main():
-    if len(sys.argv) < 4:
-        print("用法: python test.py <测试图像> <模型文件> <训练数据目录>")
+    # 读取配置文件
+    try:
+        with open('config.yaml', 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+    except Exception as e:
+        print(f"读取配置文件时出错: {e}")
         sys.exit(1)
-    test_image_path = sys.argv[1]
-    model_path = sys.argv[2]
-    data_dir = sys.argv[3]
+    
+    # 获取测试配置
+    test_config = config['test']
+    test_image_path = test_config['test_image']
+    model_path = test_config['model_path']
+    data_dir = test_config['data_dir']
+
     if not os.path.exists(test_image_path):
         print(f"错误: 测试图像 {test_image_path} 不存在")
         sys.exit(1)
@@ -46,12 +55,14 @@ def main():
     try:
         most_similar_image, distance = recognize_face(test_image_path, model_path)
         test_img = cv2.imread(test_image_path)
+        test_img=cv2.resize(test_img, (300, 300))
         similar_img = cv2.imread(os.path.join(data_dir, most_similar_image))
+        similar_img=cv2.resize(similar_img, (300, 300))
         cv2.putText(test_img, f"Distance: {distance:.2f}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.imshow('Test Image', test_img)
         cv2.imshow('Most Similar Image', similar_img)
-        cv2.waitKey(0)
+        cv2.waitKey(3000)
         cv2.destroyAllWindows()        
         print(f"最相似的图像: {most_similar_image}")
         print(f"距离: {distance}")

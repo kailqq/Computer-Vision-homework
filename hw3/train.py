@@ -4,6 +4,7 @@ import numpy as np
 from scipy.linalg import eigh
 import cv2
 import pickle
+import yaml
 from utils import preprocess_image, create_feature_faces_image
 
 def train_model(data_dir, energy_percentage, model_dir):
@@ -12,7 +13,6 @@ def train_model(data_dir, energy_percentage, model_dir):
         model_path = os.path.join(model_dir, 'model.pkl')
     else:
         model_path = model_dir
-    
     # 获取所有图像文件
     image_files = [f for f in os.listdir(data_dir) if f.endswith(('.pgm', '.jpg', '.png'))]
     
@@ -78,19 +78,25 @@ def train_model(data_dir, energy_percentage, model_dir):
     cv2.putText(feature_faces_image, f"Eigenfaces: {n_components}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     cv2.imshow('Eigenfaces', feature_faces_image)
-    cv2.waitKey(0)
+    cv2.waitKey(10000)
     cv2.destroyAllWindows()
     
     return model
 
 def main():
-    if len(sys.argv) < 4:
-        print("用法: python train.py <数据目录> <能量百分比> <模型文件>")
+    # 读取配置文件
+    try:
+        with open('config.yaml', 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+    except Exception as e:
+        print(f"读取配置文件时出错: {e}")
         sys.exit(1)
     
-    data_dir = sys.argv[1]
-    energy_percentage = float(sys.argv[2])
-    model_dir = sys.argv[3]
+    # 获取训练配置
+    train_config = config['train']
+    data_dir = train_config['data_dir']
+    energy_percentage = train_config['energy_percentage']
+    model_dir = train_config['model_dir']
 
     if not os.path.exists(data_dir):
         print(f"错误: 数据目录 {data_dir} 不存在")
